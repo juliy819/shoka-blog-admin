@@ -21,7 +21,7 @@
 
 <script lang="ts" setup>
 
-import useStore from '@/store';
+import useStore from '@/stores';
 
 const { appStore } = useStore();
 const size = computed(() => appStore.size);

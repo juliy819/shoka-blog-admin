@@ -5,8 +5,8 @@
 -->
 <template>
   <div class="navbar">
-    <Hamburger :is-active="appStore.sidebar.opened" class="hamburger-container" @toggle="toggleSidebar"></Hamburger>
-    <Breadcrumb></Breadcrumb>
+    <hamburger :is-active="appStore.sidebar.opened" class="hamburger-container" @toggle="toggleSidebar"></hamburger>
+    <breadcrumb></breadcrumb>
     <!-- 右侧菜单 -->
     <div class="right-menu">
       <template v-if="device !== 'mobile'">
@@ -28,7 +28,7 @@
         </el-tooltip>
         <!-- 全屏 -->
         <el-tooltip content="切换全屏">
-          <screenfull class="right-menu-item hover-effect"></screenfull>
+          <screen-full class="right-menu-item hover-effect"></screen-full>
         </el-tooltip>
         <!-- 布局大小 -->
         <el-tooltip content="布局大小">
@@ -57,7 +57,7 @@
 </template>
 
 <script lang="ts" setup>
-import useStore from '@/store';
+import useStore from '@/stores';
 import { modal } from '@/utils/modal';
 
 const { appStore, userStore } = useStore();

@@ -1,8 +1,8 @@
 import useUserStore from './modules/user';
-import useAppStore from '@/store/modules/app';
-import usePermissionStore from '@/store/modules/permission';
-import useSettingStore from '@/store/modules/setting';
-import useTagStore from '@/store/modules/tag';
+import useAppStore from '@/stores/modules/app';
+import usePermissionStore from '@/stores/modules/permission';
+import useSettingStore from '@/stores/modules/setting';
+import useTagStore from '@/stores/modules/tag';
 
 const useStore = () => ({
   appStore: useAppStore(),

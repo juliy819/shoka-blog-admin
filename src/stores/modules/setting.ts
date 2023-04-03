@@ -1,5 +1,5 @@
 import defaultSettings from '@/settings';
-import type { SettingState } from '@/store/interface';
+import type { SettingState } from '@/stores/interface';
 import { defineStore } from 'pinia';
 import { useDynamicTitle } from '@/utils/dynamicTitle';
 

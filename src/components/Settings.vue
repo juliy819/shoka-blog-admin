@@ -65,7 +65,7 @@
 </template>
 
 <script lang="ts" setup>
-import useStore from '@/store';
+import useStore from '@/stores';
 import { computed, ref } from 'vue';
 import { useDynamicTitle } from '@/utils/dynamicTitle';
 import { modal } from '@/utils/modal';

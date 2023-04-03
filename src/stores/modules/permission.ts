@@ -1,9 +1,9 @@
-import type { PermissionState } from '@/store/interface';
+import type { PermissionState } from '@/stores/interface';
 import type { RouteRecordRaw } from 'vue-router';
 import { constantRoutes } from '@/router';
 import { loginApi } from '@/api/login';
 import { defineStore } from 'pinia';
-import ParentView from '@/components/ParentView/index.vue';
+import ParentView from '@/components/ParentView.vue';
 import Layout from '@/layout/index.vue';
 
 // 匹配views里面所有的.vue文件
