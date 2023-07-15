@@ -85,7 +85,7 @@
             {{ exceptionLog.errorMethod }}
           </el-text>
         </el-form-item>
-        <preview-code :code="exceptionLog.message" type="java" />
+        <preview-code :code="exceptionLog.message" type="java" style="border-radius: 10px" />
       </el-form>
       <template #footer>
         <div class="dialog-footer">
