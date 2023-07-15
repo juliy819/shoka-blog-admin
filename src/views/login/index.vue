@@ -45,8 +45,8 @@ const { userStore } = useStore();
 const loading = ref(false);
 const ruleFormRef = ref<FormInstance>();
 const loginForm = reactive({
-  username: 'juliy@qq.com',
-  password: '123456'
+  username: '799399654@qq.com',
+  password: '202083290549'
 });
 const rules = reactive<FormRules>({
   username: [
