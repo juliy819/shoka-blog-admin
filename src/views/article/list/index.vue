@@ -194,7 +194,7 @@ import { formatDate } from '@/utils/date';
 import { modal } from '@/utils/modal';
 import router from '@/router';
 import defCover from '@/assets/images/defaultCover.jpg';
-import type { UploadFile, UploadFiles, UploadRawFile } from 'element-plus';
+import type { UploadFile, UploadRawFile } from 'element-plus';
 import * as yaml from 'yaml';
 import { saveAs } from 'file-saver';
 
@@ -329,7 +329,7 @@ const recoverArticles = (id?: number): void => {
   });
 };
 
-const uploadMd = (file: UploadFile, files: UploadFiles): void => {
+const uploadMd = (file: UploadFile): void => {
   // 判断上传文件的格式
   const typeArray = ['.md', '.txt'];
   const type = file.name.substring(file.name.lastIndexOf('.'));
@@ -380,14 +380,13 @@ const uploadMd = (file: UploadFile, files: UploadFiles): void => {
       if (articleForm.articleTitle === '') {
         articleForm.articleTitle = file.name.substring(0, file.name.lastIndexOf('.'));
       }
-      console.log(articleForm);
 
       // 添加文章
-      // articleApi.addArticle(articleForm).then(() => {
-      //   modal.notifySuccess(`'${articleForm.articleTitle}'导入成功`);
-      // }).catch(() => {
-      //   modal.notifyError(`'${articleForm.articleTitle}'导入失败`);
-      // });
+      articleApi.addArticle(articleForm).then(() => {
+        modal.notifySuccess(`'${articleForm.articleTitle}'导入成功`);
+      }).catch(() => {
+        modal.notifyError(`'${articleForm.articleTitle}'导入失败`);
+      });
     }
   };
   reader.readAsText(file.raw as UploadRawFile);
