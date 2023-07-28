@@ -20,8 +20,8 @@
 </template>
 
 <script lang="ts" setup>
-
 import useStore from '@/stores';
+import { modal } from '@/utils/modal';
 
 const { appStore } = useStore();
 const size = computed(() => appStore.size);
