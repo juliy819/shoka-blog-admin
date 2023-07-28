@@ -57,6 +57,11 @@ export const articleApi: ArticleApi = {
     method: 'get'
   }),
 
+  getArticleInfo: (articleId) => request({
+    url: '/article/edit/' + articleId,
+    method: 'get'
+  }),
+
   updateArticleTop: (topInfo: Top) => request({
     url: '/article/top',
     method: 'put',

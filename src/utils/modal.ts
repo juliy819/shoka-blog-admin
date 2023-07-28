@@ -116,7 +116,8 @@ export const modal: Modal = {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       center: true,
-      type: 'warning'
+      type: 'warning',
+      dangerouslyUseHTMLString: true
     });
   },
 

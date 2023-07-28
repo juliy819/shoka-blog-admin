@@ -14,6 +14,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.1.0",
     "@kangc/v-md-editor": "^2.3.15",
+    "@types/file-saver": "^2.0.5",
     "@vue/compiler-sfc": "^3.0.0",
     "axios": "^1.3.4",
     "dayjs": "^1.11.7",
@@ -32,7 +33,8 @@
     "unplugin-vue-components": "^0.24.0",
     "vite-plugin-prismjs": "^0.0.8",
     "vue": "^3.2.47",
-    "vue-router": "^4.1.6"
+    "vue-router": "^4.1.6",
+    "yaml": "^2.3.1"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.2.0",

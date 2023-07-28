@@ -58,17 +58,28 @@
         </el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button :disabled="articleQuery.isDelete === 1 || multiple" icon="remove" plain type="danger"
+        <el-button v-if="status === '回收站'" :disabled="multiple" icon="finished" plain type="success"
+                   @click="recoverArticles(undefined)">
+          恢复
+        </el-button>
+        <el-button v-else :disabled="multiple" icon="remove" plain type="danger"
                    @click="recycleArticles(undefined)">
           回收
         </el-button>
       </el-col>
       <el-col :span="1.5">
-        <el-button :disabled="articleQuery.isDelete === 0 || multiple" icon="finished" plain type="success"
-                   @click="recoverArticles(undefined)">
-          恢复
+        <el-button :disabled="multiple" icon="download" plain type="primary" @click="exportMd(undefined)">
+          导出
         </el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-upload multiple :auto-upload="false" :on-change="uploadMd" :show-file-list="false" accept=".md, .txt">
+          <el-button icon="uploadFilled" plain type="primary">
+            导入
+          </el-button>
+        </el-upload>
+      </el-col>
+
       <!-- 右侧工具栏 -->
       <right-toolbar v-model:show-search="showSearch" @queryTable="getArticleList" />
     </el-row>
@@ -149,12 +160,16 @@
         </template>
       </el-table-column>
       <!-- 操作 -->
-      <el-table-column align="center" label="操作" width="220">
+      <el-table-column align="center" label="操作" width="280">
         <template #default="scope">
           <el-button v-if="scope.row.isDelete === 0" icon="edit" link type="primary" @click="editArticle(scope.row.id)">
             编辑
           </el-button>
-          <el-button v-if="articleQuery.isDelete === 0" icon="remove" link type="danger"
+          <el-button v-if="scope.row.isDelete === 0" icon="download" link type="primary"
+                     @click="exportMd(scope.row.id)">
+            导出
+          </el-button>
+          <el-button v-if="scope.row.isDelete === 0" icon="remove" link type="danger"
                      @click="recycleArticles(scope.row.id)">回收
           </el-button>
           <el-button v-else icon="remove" link type="success" @click="recoverArticles(scope.row.id)">恢复
@@ -173,18 +188,23 @@
 <script lang="ts" setup>
 import { articleApi } from '@/api/article';
 import { ref } from 'vue';
-import type { Article, ArticleQuery, CategoryOption, Featured, TagOption, Top } from '@/api/article/types';
+import type { Article, ArticleForm, ArticleQuery, CategoryOption, Featured, TagOption, Top } from '@/api/article/types';
 import { Clock, EditPen, Hide, View } from '@element-plus/icons-vue';
 import { formatDate } from '@/utils/date';
 import { modal } from '@/utils/modal';
 import router from '@/router';
 import defCover from '@/assets/images/defaultCover.jpg';
+import type { UploadFile, UploadFiles, UploadRawFile } from 'element-plus';
+import * as yaml from 'yaml';
+import { saveAs } from 'file-saver';
+
+let refreshTimeout: number | undefined;
 
 const status = ref('全部');
 const count = ref(0);
 const showSearch = ref(true);
 const loading = ref(false);
-const multiple = ref(false);
+const multiple = ref(true);
 const categoryList = ref<CategoryOption[]>([]);
 const tagList = ref<TagOption[]>([]);
 const articleList = ref<Article[]>([]);
@@ -309,6 +329,128 @@ const recoverArticles = (id?: number): void => {
   });
 };
 
+const uploadMd = (file: UploadFile, files: UploadFiles): void => {
+  // 判断上传文件的格式
+  const typeArray = ['.md', '.txt'];
+  const type = file.name.substring(file.name.lastIndexOf('.'));
+  if (typeArray.indexOf(type) === -1) {
+    modal.msgWarning('只能上传md或txt格式文件！');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function () {
+    if (reader.result) {
+      const articleForm: ArticleForm = {
+        id: undefined,
+        articleTitle: '',
+        articleCover: '',
+        articleContent: '',
+        categoryName: '',
+        tagNameList: [],
+        articleType: 1,
+        status: 1,
+        isTop: 0,
+        isFeatured: 0
+      };
+
+      let fileContent = reader.result as string;
+      // 解析meta信息
+      const { content, meta } = parseMdMeta(fileContent);
+      articleForm.articleContent = content;
+
+      // 映射集合
+      const map: { [key: string]: string } = {
+        'title': 'articleTitle',
+        'cover': 'articleCover',
+        'category': 'categoryName',
+        'tags': 'tagNameList',
+        'type': 'articleType'
+      };
+      // 将meta信息转换为articleInfo
+      for (const prop in meta) {
+        if (meta.hasOwnProperty(prop) && typeof meta[prop] !== 'undefined') {
+          let newProp = prop;
+          if (prop in map) {
+            newProp = map[prop];
+          }
+          (articleForm as any)[newProp] = meta[prop];
+        }
+      }
+      if (articleForm.articleTitle === '') {
+        articleForm.articleTitle = file.name.substring(0, file.name.lastIndexOf('.'));
+      }
+      console.log(articleForm);
+
+      // 添加文章
+      // articleApi.addArticle(articleForm).then(() => {
+      //   modal.notifySuccess(`'${articleForm.articleTitle}'导入成功`);
+      // }).catch(() => {
+      //   modal.notifyError(`'${articleForm.articleTitle}'导入失败`);
+      // });
+    }
+  };
+  reader.readAsText(file.raw as UploadRawFile);
+
+  clearTimeout(refreshTimeout);
+  refreshTimeout = setTimeout(() => {
+    getArticleList();
+  }, 1000);
+};
+
+/**
+ * 解析md文件中的meta信息
+ * @param mdContent md文件内容
+ * @return  md文件内容和meta信息
+ */
+const parseMdMeta = (mdContent: string): { content: string, meta: any } => {
+  const regex = /^---([\s\S]+?)---/;
+  const match = mdContent.match(regex);
+  if (match) {
+    const yamlStr = match[1];
+    const meta = yaml.parse(yamlStr);
+    const content = mdContent.replace(match[0], '').trim();
+    return { content, meta };
+  } else {
+    return { content: mdContent, meta: null };
+  }
+};
+
+const exportMd = (id?: number): void => {
+  let ids: number[] = [];
+  if (id === undefined) {
+    ids = articleIdList.value;
+  } else {
+    ids = [id];
+  }
+
+  modal.messageConfirm('确定要导出选中的文章？').then(() => {
+    ids.forEach(id => {
+      articleApi.getArticleInfo(id as number).then(({ data }) => {
+        const articleInfo = data.data;
+        const content = articleInfo.articleContent;
+        const meta = {
+          title: articleInfo.articleTitle,
+          cover: articleInfo.articleCover,
+          category: articleInfo.categoryName,
+          tags: articleInfo.tagNameList,
+          id: articleInfo.id,
+          type: articleInfo.articleType,
+          status: articleInfo.status,
+          isTop: articleInfo.isTop,
+          isFeatured: articleInfo.isFeatured
+        };
+        const metaStr = yaml.stringify(meta);
+        const fileContent = `---\n${metaStr}---\n\n${content.trim()}\n`;
+
+        const file = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+        saveAs(file, `${articleInfo.articleTitle}.md`);
+      });
+    });
+    modal.notifySuccess('导出成功');
+  });
+};
+
 /**
  * 编辑文章
  * @param id 文章id
@@ -397,7 +539,7 @@ const getArticleList = (): void => {
     articleList.value = data.data.recordList;
     count.value = data.data.count;
     previewCoverList.value = articleList.value
-        .map(article => article.articleCover === '' ? defCover : article.articleCover);
+      .map(article => article.articleCover === '' ? defCover : article.articleCover);
     loading.value = false;
   });
 };

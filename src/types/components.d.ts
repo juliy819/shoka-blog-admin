@@ -13,7 +13,6 @@ declare module '@vue/runtime-core' {
     CalendarHeatmap: typeof import('./../components/CalendarHeatmap/index.vue')['default']
     Echarts: typeof import('./../components/Echarts.vue')['default']
     Editor: typeof import('./../components/Editor.vue')['default']
-    ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAutocomplete: typeof import('element-plus/es')['ElAutocomplete']
     ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']
     ElBreadcrumbItem: typeof import('element-plus/es')['ElBreadcrumbItem']

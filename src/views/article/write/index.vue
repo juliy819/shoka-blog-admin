@@ -8,8 +8,18 @@
     <!-- 文章标题 -->
     <div class="header-container">
       <el-input v-model="articleForm.articleTitle" placeholder="请输入文章标题" />
-      <el-button type="danger" @click="resetArticleForm(true)">重置</el-button>
-      <el-button plain @click="saveDraft">保存</el-button>
+      <el-upload :auto-upload="false" :on-change="uploadMd" :show-file-list="false" accept=".md, .txt">
+        <el-tooltip content="导入">
+          <el-button icon="uploadFilled" link type="primary" />
+        </el-tooltip>
+      </el-upload>
+      <el-tooltip content="导出">
+        <el-button icon="download" link type="primary" @click="exportMd" />
+      </el-tooltip>
+      <el-tooltip content="重置">
+        <el-button icon="refresh" link type="danger" @click="resetArticleForm(true)" />
+      </el-tooltip>
+      <el-button @click="saveDraft">保存草稿</el-button>
       <el-button type="primary" @click="openModel">发布文章</el-button>
     </div>
     <!-- 编辑器 -->
@@ -81,7 +91,7 @@
         </el-form-item>
         <!-- 缩略图 -->
         <el-form-item label="缩略图" prop="articleCover">
-          <el-upload :before-upload="beforeUpload" :headers="authorization" :on-success="updateArticleCover"
+          <el-upload :before-upload="beforeUploadCover" :headers="authorization" :on-success="updateArticleCover"
                      :show-file-list="false" accept="image/*" action="/api/article/upload" drag>
             <el-icon v-if="articleForm.articleCover === ''" class="el-icon--upload">
               <upload-filled />
@@ -127,7 +137,7 @@
 import { useDateFormat } from '@vueuse/core';
 import { reactive, ref } from 'vue';
 import type { ArticleForm, CategoryOption, TagOption } from '@/api/article/types';
-import type { FormInstance, FormRules, UploadRawFile } from 'element-plus';
+import type { FormInstance, FormRules, UploadFile, UploadRawFile } from 'element-plus';
 import { UploadFilled } from '@element-plus/icons-vue';
 import { articleApi } from '@/api/article';
 import * as imageConversion from 'image-conversion';
@@ -137,6 +147,22 @@ import type { Awaitable } from 'element-plus/es/utils';
 import { modal } from '@/utils/modal';
 import useStore from '@/stores';
 import router from '@/router';
+import * as yaml from 'yaml';
+import { saveAs } from 'file-saver';
+
+// interface Meta {
+//   title?: string;
+//   cover?: string;
+//   category?: string;
+//   tags?: string[];
+//   id?: undefined | number;
+//   type?: number;
+//   status?: number;
+//   isTop?: number;
+//   isFeatured?: number;
+// }
+
+let meta: any;
 
 const articleFormRef = ref<FormInstance>();
 const rules = reactive<FormRules>({
@@ -152,6 +178,7 @@ const rules = reactive<FormRules>({
   }]
 });
 
+const upload = ref(null);
 const { tagStore } = useStore();
 const route = useRoute();
 const articleId = route.params.articleId;
@@ -171,7 +198,7 @@ const articleForm = ref<ArticleForm>({
   articleType: 1,
   isTop: 0,
   isFeatured: 0,
-  status: 3
+  status: 1
 });
 const typeList = reactive([
   { value: 1, label: '原创' },
@@ -325,7 +352,7 @@ const uploadImage = (event: any, insertImage: any, files: Array<File>) => {
  * 文章封面上传前处理
  * @param rawFile 图片
  */
-const beforeUpload = (rawFile: UploadRawFile): Awaitable<boolean | void | File | Blob | null | undefined> => {
+const beforeUploadCover = (rawFile: UploadRawFile): Awaitable<boolean | void | File | Blob | null | undefined> => {
   return new Promise(resolve => {
     if (rawFile.size / 1024 < 200) {
       resolve(rawFile);
@@ -348,6 +375,93 @@ const updateArticleCover = (response: AxiosResponse): void => {
   articleForm.value.articleCover = response.data;
 };
 
+const uploadMd = (file: UploadFile) => {
+  // 判断上传文件的格式
+  const typeArray = ['.md', '.txt'];
+  const type = file.name.substring(file.name.lastIndexOf('.'));
+  if (typeArray.indexOf(type) === -1) {
+    modal.msgWarning('只能上传md或txt格式文件！');
+    return;
+  }
+
+  resetArticleForm();
+  const reader = new FileReader();
+  reader.onload = function () {
+    if (reader.result) {
+      let fileContent = reader.result as string;
+      // 解析meta信息
+      parseMdMeta(fileContent);
+
+      // 映射集合
+      const map: { [key: string]: string } = {
+        'title': 'articleTitle',
+        'cover': 'articleCover',
+        'category': 'categoryName',
+        'tags': 'tagNameList',
+        'type': 'articleType'
+      };
+      // 将meta信息转换为articleInfo
+      for (const prop in meta) {
+        if (meta.hasOwnProperty(prop) && typeof meta[prop] !== 'undefined') {
+          let newProp = prop;
+          if (prop in map) {
+            newProp = map[prop];
+          }
+          (articleForm.value as any)[newProp] = meta[prop];
+        }
+      }
+    }
+  };
+  reader.readAsText(file.raw as UploadRawFile);
+};
+
+/**
+ * 解析md文件中的meta信息
+ * @param mdContent md文件内容
+ * @return  md文件内容和meta信息
+ */
+const parseMdMeta = (mdContent: string): void => {
+  const regex = /^---([\s\S]+?)---/;
+  const match = mdContent.match(regex);
+  if (match) {
+    const yamlStr = match[1];
+    meta = yaml.parse(yamlStr);
+    articleForm.value.articleContent = mdContent.replace(match[0], '').trim();
+  } else {
+    articleForm.value.articleContent = mdContent;
+  }
+};
+
+/**
+ * 导出md文件
+ */
+const exportMd = () => {
+  modal.messageConfirm(`确定将文章 '${articleForm.value.articleTitle}' 导出为md文档吗?`).then(() => {
+    const file = new Blob([addMdMeta(articleForm.value.articleContent)], { type: 'text/plain;charset=utf-8' });
+    saveAs(file, `${articleForm.value.articleTitle}.md`);
+  });
+};
+
+/**
+ * 添加meta信息
+ * @param content md文件内容
+ */
+function addMdMeta(content: string): string {
+  meta = {
+    title: articleForm.value.articleTitle,
+    cover: articleForm.value.articleCover,
+    category: articleForm.value.categoryName,
+    tags: articleForm.value.tagNameList,
+    id: articleForm.value.id,
+    type: articleForm.value.articleType,
+    status: articleForm.value.status,
+    isTop: articleForm.value.isTop,
+    isFeatured: articleForm.value.isFeatured
+  };
+  const metaStr = yaml.stringify(meta);
+  return `---\n${metaStr}---\n\n${content.trim()}\n`;
+}
+
 /**
  * 提交表单
  */
@@ -358,9 +472,8 @@ const submitForm = () => {
         // 若是编辑文章，则编辑完成后返回
         if (articleForm.value.id !== undefined) {
           modal.notifySuccess('文章修改成功');
-          tagStore.delView(({ path: `/article/write/${articleForm.value.id}` }));
           router.push({ path: '/article/list' });
-          resetArticleForm();
+          tagStore.delView(({ path: `/article/write/${articleForm.value.id}` }));
         } else {
           modal.notifySuccess('文章发布成功');
         }
@@ -371,11 +484,27 @@ const submitForm = () => {
 };
 
 /**
+ * 保存草稿
+ */
+const saveDraft = (): void => {
+  if (articleForm.value.articleContent === '') {
+    modal.msgError('文章内容不能为空');
+    return;
+  }
+
+  articleForm.value.status = 3;
+  articleApi.addArticle(articleForm.value).then(() => {
+    modal.notifySuccess('文章保存成功');
+    open.value = false;
+  });
+};
+
+/**
  * 重置表单
  */
 const resetArticleForm = (showConfirm: boolean = false): void => {
   if (showConfirm) {
-    modal.messageConfirm('确定要重置数据吗?这会清空所有已编辑的数据').then(() => {
+    modal.messageConfirm('确定要重置数据吗?<br />该操作将清空页面上所有内容').then(() => {
       articleForm.value = {
         id: undefined,
         articleCover: '',
@@ -405,17 +534,6 @@ const resetArticleForm = (showConfirm: boolean = false): void => {
   }
 };
 
-/**
- * 保存草稿
- */
-const saveDraft = (): void => {
-  articleForm.value.status = 3;
-  articleApi.addArticle(articleForm.value).then(() => {
-    modal.notifySuccess('文章保存成功');
-    open.value = false;
-  });
-};
-
 onMounted(() => {
   if (articleId) {
     if (isNaN(Number(articleId))) {
@@ -439,8 +557,13 @@ onMounted(() => {
   margin-bottom: 1.25rem;
 
   .el-button {
-    width: 100px;
     margin-left: 10px;
+  }
+
+  .more-dropdown {
+    margin: auto 10px;
+    border: none !important;
+    user-select: none;
   }
 }
 

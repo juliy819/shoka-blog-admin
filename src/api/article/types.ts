@@ -63,6 +63,13 @@ export interface ArticleApi {
   editArticle(articleId: number): AxiosPromise<Result<ArticleForm>>;
 
   /**
+   * 获取文章信息
+   * @param articleId 文章id
+   * @return Article
+   */
+  getArticleInfo(articleId: number): AxiosPromise<Result<ArticleForm>>;
+
+  /**
    * 修改文章置顶状态
    * @param topInfo 置顶信息
    */
