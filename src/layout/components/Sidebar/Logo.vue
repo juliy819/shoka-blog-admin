@@ -5,13 +5,13 @@
     <transition name="sidebarLogoFade">
       <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
         <img v-if="logo" :src="logo" alt="" class="sidebar-logo" />
-        <h1 v-else class="sidebar-title">博客后台管理系统</h1>
+        <h1 v-else class="sidebar-title">{{ appTitle }}</h1>
       </router-link>
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
         <img v-if="logo" :src="logo" alt="" class="sidebar-logo" />
         <h1 :style="{ color: sideTheme === 'theme-dark' ? variables.logoTitleColor : variables.logoLightTitleColor }"
             class="sidebar-title">
-          博客后台管理系统</h1>
+          {{ appTitle }}</h1>
       </router-link>
     </transition>
   </div>
@@ -32,6 +32,8 @@ defineProps({
 const { settingStore } = useStore();
 
 const sideTheme = computed(() => settingStore.sideTheme);
+
+const appTitle = import.meta.env.VITE_APP_TITLE;
 </script>
 
 <style lang="scss" scoped>

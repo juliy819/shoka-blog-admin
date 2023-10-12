@@ -1,7 +1,7 @@
 <template>
   <div class="login-view">
     <el-form ref="ruleFormRef" :model="loginForm" :rules="rules" class="login-form">
-      <h3 class="title">博客后台管理系统</h3>
+      <h3 class="title">{{ appTitle }}</h3>
 
       <el-form-item prop="username">
         <el-input v-model="loginForm.username" class="form-input" placeholder="账号" size="large" type="text">
@@ -41,6 +41,7 @@ import { reactive, ref } from 'vue';
 import useStore from '@/stores';
 import router from '@/router';
 
+const appTitle = import.meta.env.VITE_APP_TITLE;
 const { userStore } = useStore();
 const loading = ref(false);
 const ruleFormRef = ref<FormInstance>();
