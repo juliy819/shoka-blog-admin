@@ -173,6 +173,9 @@ const isLastTag = (): boolean => {
 const addTag = (): void => {
   if (route.name) {
     tagStore.addView(route);
+    if (route.meta.link) {
+      tagStore.addIframeView(route);
+    }
   }
 };
 

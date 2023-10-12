@@ -3,7 +3,8 @@ import type { TagsView, TagViewState } from '@/stores/interface';
 
 const useTagStore = defineStore('useTagStore', {
   state: (): TagViewState => ({
-    visitedViews: []
+    visitedViews: [],
+    iframeViews: []
   }),
   actions: {
     /**
@@ -34,15 +35,33 @@ const useTagStore = defineStore('useTagStore', {
     },
 
     /**
+     * 添加iframe标签页
+     * @param view 页面
+     */
+    addIframeView(view: TagsView) {
+      if (this.iframeViews.some(v => v.path === view.path)) {
+        return;
+      }
+      this.iframeViews.push(
+        Object.assign({}, view, {
+          title: view.meta?.title || 'no-name'
+        })
+      );
+    },
+
+    /**
      * 删除标签页
      * @param view 页面
      */
     delView(view: TagsView): Promise<TagsView[]> {
       return new Promise(resolve => {
-        const index = this.visitedViews.findIndex(v => v.path === view.path);
-        if (index !== -1) {
-          this.visitedViews.splice(index, 1);
+        for (const [i, v] of this.visitedViews.entries()) {
+          if (v.path === view.path) {
+            this.visitedViews.splice(i, 1);
+            break;
+          }
         }
+        this.iframeViews = this.iframeViews.filter(item => item.path !== view.path);
         resolve([...this.visitedViews]);
       });
     },
@@ -56,6 +75,7 @@ const useTagStore = defineStore('useTagStore', {
         this.visitedViews = this.visitedViews.filter(
           v => v.meta?.affix || v.path === view.path
         );
+        this.iframeViews = this.iframeViews.filter(item => item.path === view.path);
         resolve([...this.visitedViews]);
       });
     },
@@ -72,9 +92,16 @@ const useTagStore = defineStore('useTagStore', {
         if (currentIndex === -1) {
           return;
         }
-        this.visitedViews = this.visitedViews.filter(
-          (v, index) => !!(index >= currentIndex || v.meta?.affix)
-        );
+        this.visitedViews = this.visitedViews.filter((item, idx) => {
+          if (idx >= currentIndex || (item.meta && item.meta.affix)) {
+            return true;
+          }
+          if (item.meta?.link) {
+            const fi = this.iframeViews.findIndex(v => v.path === item.path);
+            this.iframeViews.splice(fi, 1);
+          }
+          return false;
+        });
         resolve([...this.visitedViews]);
       });
     },
@@ -91,9 +118,16 @@ const useTagStore = defineStore('useTagStore', {
         if (currentIndex === -1) {
           return;
         }
-        this.visitedViews = this.visitedViews.filter(
-          (v, index) => !!(index <= currentIndex || v.meta?.affix)
-        );
+        this.visitedViews = this.visitedViews.filter((item, idx) => {
+          if (idx <= currentIndex || (item.meta && item.meta.affix)) {
+            return true;
+          }
+          if (item.meta?.link) {
+            const fi = this.iframeViews.findIndex(v => v.path === item.path);
+            this.iframeViews.splice(fi, 1);
+          }
+          return false;
+        });
         resolve([...this.visitedViews]);
       });
     },
@@ -104,6 +138,7 @@ const useTagStore = defineStore('useTagStore', {
     delAllViews(): Promise<TagsView[]> {
       return new Promise(resolve => {
         this.visitedViews = this.visitedViews.filter(v => v.meta?.affix);
+        this.iframeViews = [];
         resolve([...this.visitedViews]);
       });
     },

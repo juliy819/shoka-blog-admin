@@ -1,10 +1,11 @@
 <template>
-  <router-link :to="props.to">
+  <component :is="type" v-bind="linkProps()">
     <slot />
-  </router-link>
+  </component>
 </template>
 
 <script lang="ts" setup>
+import { isExternal } from '@/utils/validate';
 
 const props = defineProps({
   to: {
@@ -12,4 +13,29 @@ const props = defineProps({
     required: true
   }
 });
+
+const isExt = computed(() => {
+  return isExternal(props.to as string);
+});
+
+const type = computed(() => {
+  if (isExt.value) {
+    return 'a';
+  }
+  return 'router-link';
+});
+
+function linkProps() {
+  if (isExt.value) {
+    return {
+      href: props.to,
+      target: '_blank',
+      rel: 'noopener'
+    };
+  }
+  return {
+    to: props.to
+  };
+}
+
 </script>

@@ -15,7 +15,7 @@
                :collapse="isCollapse" :collapse-transition="false" :default-active="activePath"
                :text-color="sideTheme === 'theme-dark' ? variables.menuColor : variables.menuLightColor"
                :unique-opened="true" mode="vertical">
-        <sidebar-item v-for="(route, index) in sidebarRoutes" :key="route.path + index" :base-path="route.path"
+        <sidebar-item v-for="(route, index) in sidebarRouters" :key="route.path + index" :base-path="route.path"
                       :item="route" />
       </el-menu>
     </el-scrollbar>
@@ -25,7 +25,7 @@
 <script lang="ts" setup>
 import useStore from '@/stores';
 import variables from '@/assets/styles/variables.module.scss';
-import Logo from '@/layout/components/Sidebar/Logo.vue';
+import logo from '@/layout/components/Sidebar/Logo.vue';
 import SidebarItem from '@/layout/components/Sidebar/SidebarItem.vue';
 import type { RouteRecordRaw } from 'vue-router';
 
@@ -35,7 +35,7 @@ const sideTheme = computed(() => settingStore.sideTheme);
 const theme = computed(() => settingStore.theme);
 const isCollapse = computed(() => !appStore.sidebar.opened);
 const showLogo = computed(() => settingStore.sidebarLogo);
-const sidebarRoutes = computed(() => permissionStore.routes as RouteRecordRaw[]);
+const sidebarRouters = computed(() => permissionStore.sidebarRouters as RouteRecordRaw[]);
 const activePath = computed(() => route.path);
 </script>
 

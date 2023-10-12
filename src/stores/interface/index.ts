@@ -4,8 +4,19 @@ export interface TagsView extends Partial<RouteLocationNormalized> {
   title?: string;
 }
 
+/**
+ * 标签页
+ */
 export interface TagViewState {
+  /**
+   * 访问过的标签页
+   */
   visitedViews: TagsView[];
+
+  /**
+   * iframe标签页
+   */
+  iframeViews: TagsView[];
 }
 
 /**
@@ -122,4 +133,14 @@ export interface PermissionState {
    * 路由
    */
   routes: RouteRecordRaw[];
+
+  /**
+   * 添加的路由
+   */
+  addRoutes: RouteRecordRaw[];
+
+  /**
+   * 侧边栏路由
+   */
+  sidebarRouters: RouteRecordRaw[];
 }

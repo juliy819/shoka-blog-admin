@@ -43,6 +43,7 @@
 import type { RouteRecordRaw } from 'vue-router';
 import AppLink from './Link.vue';
 import { ref } from 'vue';
+import { isExternal } from '@/utils/validate';
 
 const onlyOneChild = ref();
 const props = defineProps({
@@ -96,6 +97,12 @@ const hasOneShowingChild = (parent: any, children?: Array<RouteRecordRaw>): bool
  * @param routePath 路径
  */
 const resolvePath = (routePath: string) => {
+  if (isExternal(routePath)) {
+    return routePath.substring(1);
+  }
+  if (isExternal(props.basePath)) {
+    return props.basePath.substring(1);
+  }
   return getNormalPath(props.basePath + '/' + routePath);
 };
 
