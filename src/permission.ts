@@ -4,6 +4,7 @@ import NProgress from 'nprogress';
 import { isReLogin } from '@/utils/request';
 import useStore from '@/stores';
 import { modal } from '@/utils/modal';
+import useSettingStore from '@/stores/modules/setting';
 
 NProgress.configure({
   easing: 'ease',
@@ -21,6 +22,7 @@ router.beforeEach((to, from, next) => {
   const { userStore, permissionStore } = useStore();
   // 判断是否有token
   if (getToken()) {
+    to.meta.title && useSettingStore().setTitle(to.meta.title);
     if (to.path === '/login') {
       next({ path: '/' });
     } else {
